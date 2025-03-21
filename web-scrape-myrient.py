@@ -1,11 +1,8 @@
-import httplib2
+import httplib2, os, time, progressbar
 import urllib.request
 from bs4 import BeautifulSoup, SoupStrainer
-import os
-import progressbar
 
-url = 'https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%20Portable/'
-
+url = 'https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20%28Headered%29/'
 http = httplib2.Http()
 
 response, content = http.request(url)
@@ -29,7 +26,25 @@ def show_progress(block_num, block_size, total_size):
         pbar.finish()
         pbar = None
 
-
+def download_with_retry(url, filename, max_retries=3, delay=5):
+    retries = 0
+    while retries < max_retries:
+        try:
+            urllib.request.urlretrieve(url, filename, show_progress)
+            print(f"Downloaded '{url}' to '{filename}' successfully.")
+            return True  # Indicate success
+        except urllib.error.URLError as e:
+            print(f"Error during download: {e}")
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+            retries += 1
+        except urllib.error.HTTPError as e:
+            print(f"HTTP Error: {e}")
+            print(f"Retrying in {delay} seconds...")
+            time.sleep(delay)
+            retries += 1
+    print(f"Failed to download '{url}' after {max_retries} retries.")
+    return False  # Indicate failure
 
 for link in BeautifulSoup(content, features="html.parser").find_all('a', href=True):
     links.append(link['href'])
@@ -43,4 +58,8 @@ for link in links:
         else:
             # if 'Yggdra%20Union%20%28USA%29.zip' == link:
             print(fileName)
-            urllib.request.urlretrieve(url + link, fileName, show_progress)
+            if download_with_retry(url + link, fileName) :
+                print("Download complete.")
+            else:
+                print("Download failed.")
+            
