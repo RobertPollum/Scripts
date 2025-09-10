@@ -2,7 +2,7 @@ import httplib2, os, time, progressbar
 import urllib.request
 from bs4 import BeautifulSoup, SoupStrainer
 
-url = 'https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20%28Headered%29/'
+url = 'https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy/'
 http = httplib2.Http()
 
 response, content = http.request(url)
