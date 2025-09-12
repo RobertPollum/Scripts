@@ -6,7 +6,7 @@ from textual.css.query import NoMatches
 import httplib2, os, time, progressbar
 import urllib.request
 from bs4 import BeautifulSoup, SoupStrainer
-from myrientsettings import Settings 
+from MyrientSettings import Settings 
 
 class MyrientNavigator(App):
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
