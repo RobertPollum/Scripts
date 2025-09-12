@@ -2,17 +2,24 @@ from textual import events, on
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.widgets import Button, Label, DirectoryTree, Header, Footer
+from textual.css.query import NoMatches
+import httplib2, os, time, progressbar
+import urllib.request
+from bs4 import BeautifulSoup, SoupStrainer
+from myrientsettings import Settings 
 
 class MyrientNavigator(App):
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
     CSS_PATH="textual-starter.tcss"
-
+    settings = Settings()
     text = "Original Text"
+    http = httplib2.Http()
+    links=[]
 
     def compose(self) -> ComposeResult:
-        with Container(id="myrient-downloader"):
+        with Container(id="myrient-downloader", name="Myrient Downloader"):
             yield Header(name="Myriend Downloader", show_clock=True)
-            yield Button("Press Me", id="test", variant="primary")
+            yield Button("Press Me", id="request", variant="primary")
             yield Button("Don't Press Me", id="anti-test", variant="default")
             yield Label(self.text, id="label")
             yield DirectoryTree(path="./", classes=("invisible"))
@@ -37,9 +44,11 @@ class MyrientNavigator(App):
 
            
 
-    @on(Button.Pressed, "#test")
+    @on(Button.Pressed, "#request")
     def test_pressed(self, event: Button.Pressed) -> None:
-        self.text = "test button pressed"
+        response, content = self.http.request(self.settings.base_url)
+
+        self.text = content
         print("New text: ", self.text)
         self.query_one(Label).update(f"{self.text}")
         

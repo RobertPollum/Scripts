@@ -13,6 +13,7 @@ cwd = os.getcwd()
 
 pbar = None
 
+# Create a global progress bar when downlaoding the files
 def show_progress(block_num, block_size, total_size):
     global pbar
     if pbar is None:
@@ -26,6 +27,7 @@ def show_progress(block_num, block_size, total_size):
         pbar.finish()
         pbar = None
 
+# 
 def download_with_retry(url, filename, max_retries=3, delay=5):
     retries = 0
     while retries < max_retries:
