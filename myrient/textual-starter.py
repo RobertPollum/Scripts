@@ -15,7 +15,7 @@ class MyrientNavigator(App):
             yield Button("Press Me", id="test", variant="primary")
             yield Button("Don't Press Me", id="anti-test", variant="default")
             yield Label(self.text, id="label")
-            yield DirectoryTree("./")
+            yield DirectoryTree(path="./", classes=("invisible"))
             yield Footer()
 
     def watch_data(self) -> None:

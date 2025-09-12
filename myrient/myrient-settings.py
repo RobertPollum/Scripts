@@ -1,3 +1,4 @@
+#https://docs.pydantic.dev/latest/concepts/pydantic_settings/#usage
 from collections.abc import Callable
 from typing import Any
 
