@@ -1,7 +1,8 @@
 #https://docs.pydantic.dev/latest/concepts/pydantic_settings/#usage
-import os
+import os, json
 from pathlib import Path
 from typing import List, Optional
+
 
 from pydantic import (
     BaseModel,
@@ -159,5 +160,7 @@ class Settings(BaseSettings):
         return os.path.join(self.effective_download_directory, filename)
     
     def save(self):
-        #TODO save settings to a file type
         self.model_dump_json()
+        #TODO validate the model dump is valid JSON before saving
+        with open('settings.json', 'w', encoding='utf-8') as f:
+            json.dump(self.model_dump_json(), f, ensure_ascii=False, indent=4)

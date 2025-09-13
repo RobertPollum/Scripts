@@ -52,8 +52,7 @@ class MyrientNavigator(App):
             button_id = f"menu-link-{i + 1}"
             
             try:
-                self.query_one(f"#{button_id}", Button)
-                
+                self.query_one(f"#{button_id}", Button) 
             except NoMatches:
                 button = Button(
                     link_text,
@@ -63,14 +62,6 @@ class MyrientNavigator(App):
                 )
                 self.menu_buttons.append(button)
                 print("Button already exists")
-            
-            # button = Button(
-            #     link_text,
-            #     id=button_id,
-            #     variant="success",
-            #     classes="menu-button"
-            # )
-            # self.menu_buttons.append(button)
         
         for button in self.menu_buttons:
             menu_container.mount(button)
