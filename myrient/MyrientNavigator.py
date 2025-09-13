@@ -10,7 +10,7 @@ from MyrientSettings import Settings
 
 class MyrientNavigator(App):
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
-    CSS_PATH="textual-starter.tcss"
+    CSS_PATH="MyrientNavigator.tcss"
     settings = Settings()
     text = "Original Text"
     http = httplib2.Http()
