@@ -12,3 +12,9 @@ Screen {
 DirectoryTree.invisible {
     visibility: hidden;
 }
+
+Horizontal {
+    max-width: 300;
+    overflow: auto;
+    height: auto
+}
