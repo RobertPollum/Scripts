@@ -119,11 +119,13 @@ class MyrientNavigator(App):
 
     @on(Button.Pressed, "#request")
     def test_pressed(self, event: Button.Pressed) -> None:
+        #TODO get this button removed by getting the default load to work
         self.generate_menu_links()
         
 
     @on(Button.Pressed, "#save-settings")
     def save_settings(self, event: Button.Pressed) -> None:
+        #TODO figure out additional settings that should be saved or editable
         self.settings.download_directory = self.query_one("#directory-tree", DirectoryTree).path
         self.settings.save()
 
@@ -159,5 +161,6 @@ class MyrientNavigator(App):
 
 if __name__ == "__main__":
     navigator = MyrientNavigator()
+    #TODO figure out how to auto generate the menu asynchronously on startup
     # navigator.generate_menu_links()
     navigator.run(inline=False)
