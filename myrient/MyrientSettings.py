@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     
     # Download directory settings
     download_directory: Optional[str] = Field(
-        default=None,
+        default="./",
         description="Directory to download ROMs to. If None, uses current working directory"
     )
     
@@ -157,3 +157,7 @@ class Settings(BaseSettings):
             str: Full local file path
         """
         return os.path.join(self.effective_download_directory, filename)
+    
+    def save(self):
+        #TODO save settings to a file type
+        self.model_dump_json()
