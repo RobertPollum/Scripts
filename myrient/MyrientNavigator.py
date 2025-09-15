@@ -51,12 +51,16 @@ class MyrientNavigator(App):
         self.generate_menu_links()
         
 
+    #TODO expand this function to save additional settings
     @on(Button.Pressed, "#save-settings")
     def save_settings(self, event: Button.Pressed) -> None:
         #TODO figure out additional settings that should be saved or editable
+        #TODO figue out how to navigate to directories outside of the current directory
         self.settings.download_directory = self.query_one("#directory-tree", DirectoryTree).path
         self.settings.save()
+        self.menu_container.update_settings(self.settings)
 
+    #TODO remove this unused button
     @on(Button.Pressed, "#clear")
     def clear_menu_links(self, event: Button.Pressed) -> None:
         # Clear dynamic buttons
@@ -73,6 +77,7 @@ class MyrientNavigator(App):
     def menu_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
         self.query_one("#menu-content-switcher").current = "menu-content-display"
+        #TODO diagnose why the label text isn't updating dynamically
         if button_id and button_id.startswith("menu-link-"):
             try:
                 index = int(button_id.split("-")[-1])
@@ -85,9 +90,8 @@ class MyrientNavigator(App):
                     print(f"Menu button pressed: {link_text} -> {link_href}")
                     self.query_one("#menu-content-label").update(label_text)
             except (ValueError, IndexError) as e:
-                print(f"Error handling menu button press: {e}")
+                self.query_one("#menu-content-label").update(f"Error handling menu button press: {e}")
 
 if __name__ == "__main__":
     navigator = MyrientNavigator()
-    #TODO figure out how to auto generate the menu asynchronously on startup
     navigator.run(inline=False)

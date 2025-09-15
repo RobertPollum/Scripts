@@ -62,3 +62,6 @@ class Menu(Horizontal):
 
     def get_all_menu_links(self) -> list[str]:
         return self.menu_links
+
+    def update_settings(self, settings: Settings) -> None:
+        self.settings = settings
