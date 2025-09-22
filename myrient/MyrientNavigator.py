@@ -29,8 +29,8 @@ class MyrientNavigator(App):
             yield self.menu_container
             with ContentSwitcher(id="menu-content-switcher", initial="menu-content"):
                 with Vertical(id="menu-content"):
+                    yield Label("Home", id="home-label")
                     yield Button("Load Menu Links", id="request", variant="primary")
-                    yield Button("Clear", id="clear", variant="default")
                 with Vertical(id="menu-content-display"):
                     yield Label("Menu Content", id="menu-content-label")
                 with Vertical(id="settings-container"):
@@ -59,24 +59,12 @@ class MyrientNavigator(App):
         self.settings.download_directory = self.query_one("#directory-tree", DirectoryTree).path
         self.settings.save()
         self.menu_container.update_settings(self.settings)
-
-    #TODO remove this unused button
-    @on(Button.Pressed, "#clear")
-    def clear_menu_links(self, event: Button.Pressed) -> None:
-        # Clear dynamic buttons
-        menu_container = self.query_one("#menu")
-        menu_container.remove_children()
-        menu_buttons = list(self.default_buttons)
-        for button in menu_buttons:
-            menu_container.mount(button)
-        self.text = "Cleared menu links"
-        print("New text: ", self.text)
-        self.query_one(Label).update(f"{self.text}")
     
     @on(Button.Pressed, ".menu-button")
     def menu_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
         self.query_one("#menu-content-switcher").current = "menu-content-display"
+        self.query_one("#menu-content-label").update(f"{button_id}")
         #TODO diagnose why the label text isn't updating dynamically
         if button_id and button_id.startswith("menu-link-"):
             try:
