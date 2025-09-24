@@ -1,0 +1,23 @@
+{
+    "base_url": "https://myrient.erista.me",
+    "console_path": "/files/No-Intro/Nintendo%20-%20Game%20Boy/",
+    "download_directory": "./",
+    "download": {
+        "max_retries": 3,
+        "retry_delay": 5,
+        "show_progress": true
+    },
+    "filters": {
+        "include_patterns": [
+            "%28USA%29"
+        ],
+        "exclude_patterns": [
+            "%28Demo%29",
+            "%28Beta%29"
+        ]
+    },
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "timeout": 30,
+    "log_level": "INFO",
+    "verbose": true
+}

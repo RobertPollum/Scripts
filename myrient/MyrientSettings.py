@@ -24,11 +24,11 @@ class FilterSettings(BaseModel):
     """Settings for filtering ROM files."""
     include_patterns: List[str] = Field(
         default=['%28USA%29'], 
-        description="Patterns that must be present in ROM filenames"
+        description="Patterns that must be present in ROM filenames (NOTE: This is a URL encoded string, so for example %28 is a parenthesis and %29 is a closing parenthesis)"
     )
     exclude_patterns: List[str] = Field(
         default=['%28Demo%29', '%28Beta%29'], 
-        description="Patterns to exclude from ROM filenames"
+        description="Patterns to exclude from ROM filenames (NOTE: This is a URL encoded string, so for example %28 is a parenthesis and %29 is a closing parenthesis)"
     )
     
     @field_validator('include_patterns', 'exclude_patterns')
@@ -159,8 +159,47 @@ class Settings(BaseSettings):
         """
         return os.path.join(self.effective_download_directory, filename)
     
-    def save(self):
-        self.model_dump_json()
-        #TODO validate the model dump is valid JSON before saving
-        with open('settings.json', 'w', encoding='utf-8') as f:
-            json.dump(self.model_dump_json(), f, ensure_ascii=False, indent=4)
+    @classmethod
+    def load_from_file(cls, filepath: str = 'settings.json') -> 'Settings':
+        """
+        Load settings from a JSON file.
+        
+        Args:
+            filepath: Path to the settings file (default: 'settings.json')
+            
+        Returns:
+            Settings: Loaded settings instance
+            
+        Raises:
+            FileNotFoundError: If the settings file doesn't exist
+            ValueError: If the file contains invalid JSON or settings data
+        """
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Settings file '{filepath}' not found")
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                settings_data = json.load(f)
+                
+                # Handle case where JSON was double-serialized (legacy compatibility)
+                if isinstance(settings_data, str):
+                    settings_data = json.loads(settings_data)
+                
+                return cls(**settings_data)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in settings file: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"Error loading settings: {str(e)}")
+    
+    def save(self, filepath: str = 'settings.json'):
+        """
+        Save settings to a JSON file.
+        
+        Args:
+            filepath: Path to save the settings file (default: 'settings.json')
+        """
+        # Serialize the model directly to a JSON string and write it to file
+        # Using model_dump_json avoids double-serialization (i.e., writing a JSON string as a quoted string)
+        json_str = self.model_dump_json(indent=4)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(json_str)

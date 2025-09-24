@@ -8,6 +8,8 @@ import urllib.request
 from bs4 import BeautifulSoup, SoupStrainer
 from MyrientSettings import Settings 
 from MyrientNavigatorMenu import Menu
+from MyrientSettingsScreen import MyrientSettingsScreen
+from RequestParser import RequestParser
 
 class MyrientNavigator(App):
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
@@ -15,14 +17,13 @@ class MyrientNavigator(App):
     settings = Settings()
     text = "Original Text"
     http = httplib2.Http()
-    default_buttons = (
-        Button("Base Menu", id="menu-button-0", variant="primary", classes="menu-button"),
-        Button("Settings", id="menu-button-1", variant="primary", classes="menu-button")
-    )
+    request_parser = RequestParser()
     menu_container = None
+    settings_screen = None
 
     def compose(self) -> ComposeResult:
         self.menu_container = Menu(id="menu", settings=self.settings)
+        self.settings_screen = MyrientSettingsScreen(settings=self.settings, id="settings-screen")
         with Container(id="myrient-downloader", name="Myrient Downloader"):
             yield Header(name="Myriend Downloader", show_clock=True)
             # yield Menu("menu", self.settings)
@@ -34,8 +35,7 @@ class MyrientNavigator(App):
                 with Vertical(id="menu-content-display"):
                     yield Label("Menu Content", id="menu-content-label")
                 with Vertical(id="settings-container"):
-                    yield Button("Save Settings", id="save-settings", variant="primary")
-                    yield DirectoryTree(id="directory-tree", path=self.settings.download_directory)
+                    yield self.settings_screen
             yield Footer()
            
     @on(Button.Pressed, "#show-settings")
@@ -51,20 +51,24 @@ class MyrientNavigator(App):
         self.generate_menu_links()
         
 
-    #TODO expand this function to save additional settings
-    @on(Button.Pressed, "#save-settings")
-    def save_settings(self, event: Button.Pressed) -> None:
-        #TODO figure out additional settings that should be saved or editable
-        #TODO figue out how to navigate to directories outside of the current directory
-        self.settings.download_directory = self.query_one("#directory-tree", DirectoryTree).path
-        self.settings.save()
-        self.menu_container.update_settings(self.settings)
+    def update_settings_from_screen(self) -> None:
+        """Update the main settings from the settings screen."""
+        if hasattr(self, 'settings_screen'):
+            self.settings = self.settings_screen.get_settings()
+            if hasattr(self, 'menu_container') and self.menu_container:
+                self.menu_container.update_settings(self.settings)
+    
+    @on(Button.Pressed, "#save-settings-btn")
+    def on_settings_saved(self, event: Button.Pressed) -> None:
+        """Handle when settings are saved from the settings screen."""
+        self.update_settings_from_screen()
     
     @on(Button.Pressed, ".menu-button")
     def menu_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
-        self.query_one("#menu-content-switcher").current = "menu-content-display"
-        self.query_one("#menu-content-label").update(f"{button_id}")
+        if(button_id != "show-settings"):
+            self.query_one("#menu-content-switcher").current = "menu-content-display"
+            self.query_one("#menu-content-label").update(f"{button_id}")
         #TODO diagnose why the label text isn't updating dynamically
         if button_id and button_id.startswith("menu-link-"):
             try:
@@ -79,6 +83,39 @@ class MyrientNavigator(App):
                     self.query_one("#menu-content-label").update(label_text)
             except (ValueError, IndexError) as e:
                 self.query_one("#menu-content-label").update(f"Error handling menu button press: {e}")
+
+    def generate_menu_links(self) -> None:
+        """
+        Generate menu links by fetching and parsing a URL for anchor tags.
+        This method uses the RequestParser to fetch links from a configured URL.
+        """
+        try:
+            # Example URL - you may want to make this configurable in settings
+            base_url = "https://myrient.erista.me/"  # Replace with actual Myrient URL
+            
+            # Fetch anchor tags from the URL
+            anchors = self.request_parser.get_anchors_from_url(base_url)
+            
+            # Filter for relevant links (you can customize this filtering)
+            filtered_anchors = self.request_parser.filter_anchors(
+                anchors, 
+                has_href=True
+            )
+            
+            # Convert to absolute URLs
+            absolute_anchors = self.request_parser.get_absolute_urls(filtered_anchors, base_url)
+            
+            # Update the menu container with the new links
+            if self.menu_container and hasattr(self.menu_container, 'update_menu_links'):
+                self.menu_container.update_menu_links(absolute_anchors)
+            
+            # Update UI to show success
+            self.query_one("#menu-content-label").update(f"Loaded {len(absolute_anchors)} menu links")
+            
+        except Exception as e:
+            error_msg = f"Error generating menu links: {str(e)}"
+            print(error_msg)
+            self.query_one("#menu-content-label").update(error_msg)
 
 if __name__ == "__main__":
     navigator = MyrientNavigator()
