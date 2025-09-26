@@ -10,15 +10,25 @@ import platform
 import time
 import datetime
 import os
+from dotenv import load_dotenv
 
-# Configuration - Update these values with your Tuya device details
-DEVICE_ID = "DEVICE_ID_HERE"  # Replace with your Tuya device ID
-DEVICE_IP = "IP_ADDRESS_HERE"         # Replace with your Tuya device IP
-LOCAL_KEY = "LOCAL_KEY_HERE"   # Replace with your device local key
-VERSION = 3.3                       # Most common version, adjust if needed
+# Load environment variables from .env file
+load_dotenv()
 
-# Target IP to ping (can be different from the Tuya device IP)
-TARGET_IP = "IP_ADDRESS_HERE"         # IP address to monitor
+# --- Configuration ---
+# Load credentials from environment variables
+DEVICE_ID = os.getenv("DEVICE_ID")
+DEVICE_IP = os.getenv("DEVICE_IP")
+LOCAL_KEY = os.getenv("LOCAL_KEY")
+TARGET_IP = os.getenv("TARGET_IP")
+VERSION = 3.3  # This can remain, or be added to .env if it varies
+
+# --- Validation ---
+# Ensure all required environment variables are loaded
+if not all([DEVICE_ID, DEVICE_IP, LOCAL_KEY, TARGET_IP]):
+    print("Error: One or more environment variables are missing.")
+    print("Please ensure DEVICE_ID, DEVICE_IP, LOCAL_KEY, and TARGET_IP are set in your .env file.")
+    exit(1)
 
 # Log file
 LOG_FILE = os.path.join(os.getcwd(), "tuya_restart.log")
