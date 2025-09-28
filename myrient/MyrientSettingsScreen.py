@@ -3,16 +3,14 @@ from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.widgets import (
     Button, Label, Input, Switch, TextArea, Static, 
-    Collapsible, DirectoryTree, Select
+    Collapsible, Select
 )
 from textual.widget import Widget
 from textual.validation import Number, ValidationResult, Validator
-from typing import List, Optional
-import json
+from typing import Optional
 import os
-from pathlib import Path
 
-from MyrientSettings import Settings, DownloadSettings, FilterSettings
+from MyrientSettings import Settings
 
 
 class URLValidator(Validator):
@@ -49,6 +47,7 @@ class LogLevelValidator(Validator):
 
 class MyrientSettingsScreen(Widget):
     """Interactive settings screen for Myrient Navigator."""
+    CSS_PATH="MyrientSettingsScreen.tcss"
     
     def __init__(self, settings: Optional[Settings] = None, **kwargs):
         super().__init__(**kwargs)

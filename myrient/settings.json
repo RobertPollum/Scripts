@@ -9,7 +9,8 @@
     },
     "filters": {
         "include_patterns": [
-            "%28USA%29"
+            "%28USA%29",
+            "%28PAL%29"
         ],
         "exclude_patterns": [
             "%28Demo%29",
