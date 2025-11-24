@@ -126,6 +126,7 @@ def wait_and_click_add_to_cart(driver, timeout=5):
                 name = (b.get_attribute("name") or "").lower()
                 data_cy = (b.get_attribute("data-cy") or "").lower()
                 text = (b.text or "").strip().lower()
+                print(name)
             except Exception:
                 continue
 
