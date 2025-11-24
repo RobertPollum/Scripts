@@ -3,13 +3,13 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException
 
 
 # TODO: update these products to your own links/sizes
 PRODUCTS = [
     {
-        "url": "https://littlesleepies.com/collections/two-piece-sets/products/twinkling-trees-two-piece-pajama-set",
+        "url": "https://littlesleepies.com/products/twinkling-trees-two-piece-pajama-set",
         "size": "2T",
         "quantity": 1,
     },
@@ -38,7 +38,7 @@ def create_driver():
     return driver
 
 
-def wait_and_click_size(driver, size_text, timeout=10):
+def wait_and_click_size(driver, size_text, timeout=5):
     """Select the size label whose data-size-variant-button matches size_text.
 
     On Little Sleepies product pages, size options are rendered as labels
@@ -94,46 +94,95 @@ def wait_and_click_size(driver, size_text, timeout=10):
     return True
 
 
-def wait_and_click_add_to_cart(driver, timeout=10):
-    """Wait for the Add to Cart button to be enabled, then click it.
+def wait_and_click_add_to_cart(driver, timeout=5):
+    """Wait for the main PDP Add to Cart button to be enabled, then click it.
 
-    Button example:
-
-        <button data-cy="add-to-cart" ... type="submit" name="add" ...>Add to Cart</button>
-
-    The button is disabled until a size is selected. This function assumes
-    size has already been chosen and waits until the button is clickable.
+    Strategy:
+    - Scope to the main product form: form[action="/cart/add"][id^="product_form"]
+    - Inside that form, find the button that:
+        * has name="add" and/or data-cy="add-to-cart"
+        * OR has visible text containing "add to cart"
+    - Wait until it's visible, enabled, and not data-product-unavailable="true"
+    - Scroll into view and click.
     """
     wait = WebDriverWait(driver, timeout)
 
-    # Precise selector for the add-to-cart button
-    selector = "button[data-cy='add-to-cart'][name='add'][type='submit']"
-
+    # 1) Wait for the main product form to exist
     try:
-        btn = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+        form = wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "form[action='/cart/add'][id^='product_form'].pdp-product-form")
+            )
         )
     except TimeoutException:
+        print("  [WARN] Product form not found.")
         return False
 
-    # Ensure it's not marked unavailable if that attribute is present
-    try:
-        wait.until(
-            lambda d: btn.is_enabled()
-            and (btn.get_attribute("data-product-unavailable") in (None, "false"))
-        )
-    except TimeoutException:
-        return False
+    def find_candidate_button():
+        """Find the most likely Add to Cart button inside the product form."""
+        buttons = form.find_elements(By.TAG_NAME, "button")
+        for b in buttons:
+            try:
+                name = (b.get_attribute("name") or "").lower()
+                data_cy = (b.get_attribute("data-cy") or "").lower()
+                text = (b.text or "").strip().lower()
+            except Exception:
+                continue
 
-    try:
-        driver.execute_script(
-            "arguments[0].scrollIntoView({block: 'center'});", btn
-        )
-        time.sleep(0.5)
-        btn.click()
-        return True
-    except Exception:
-        return False
+            # Heuristics for the main PDP button
+            if (
+                data_cy == "add-to-cart"
+                or name == "add"
+                or "add to cart" in text
+            ):
+                return b
+        return None
+
+    # 2) Repeatedly try to get a valid, enabled Add to Cart button
+    end_time = time.time() + timeout
+    candidate = None
+
+    while time.time() < end_time:
+        try:
+            if candidate is None:
+                candidate = find_candidate_button()
+                if candidate is None:
+                    time.sleep(0.5)
+                    continue
+
+            # Must be displayed & enabled
+            if not candidate.is_displayed() or not candidate.is_enabled():
+                time.sleep(0.5)
+                candidate = None
+                continue
+
+            # Respect data-product-unavailable if present
+            unavailable = candidate.get_attribute("data-product-unavailable")
+            if unavailable and unavailable.lower() == "true":
+                time.sleep(0.5)
+                candidate = None
+                continue
+
+            # Looks good: scroll into view and click
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", candidate
+            )
+            time.sleep(0.5)
+            candidate.click()
+            return True
+
+        except StaleElementReferenceException:
+            # Form re-rendered; refetch within loop
+            candidate = None
+            continue
+        except Exception:
+            # Any transient click interception; retry until timeout
+            candidate = None
+            time.sleep(0.5)
+            continue
+
+    print("  [WARN] Timed out waiting for Add to Cart button to be clickable.")
+    return False
 
 
 def close_sale_popup_if_present(driver, timeout=3):
@@ -215,9 +264,18 @@ def add_product(driver, url, size, quantity=1):
             print(f"  [WARN] Could not find size '{size}' on page.")
             return
 
+    # print(driver.current_url)
+    # btns = driver.find_elements(By.TAG_NAME, "button")
+    # print(f"Found {len(btns)} buttons")
+    # for b in btns:
+    #     try:
+    #         print("BTN:", (b.text or "").strip(), "| attrs:", b.get_attribute("data-cy"), b.get_attribute("name"), b.get_attribute("type"))
+    #     except Exception:
+    #         pass
+
     # Add it "quantity" times
     for i in range(quantity):
-        if not wait_and_click_add_to_cart(driver):
+        if not wait_and_click_add_to_cart(driver, 3):
             print("  [WARN] Could not find Add to Cart button.")
             return
         print(f"  Added {i + 1}/{quantity}")
