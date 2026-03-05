@@ -13,5 +13,5 @@
 # Podcast notes tracker (local state, not code)
 podcast-notes/processed_episodes.csv
 
-# Podcast notes staging (transcripts + generated notes)
-podcast-notes/staging/
+# Podcast notes processed outputs
+podcast-notes/processed/

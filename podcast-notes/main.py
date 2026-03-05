@@ -25,8 +25,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import traceback
+import time
+from datetime import datetime
 from pathlib import Path
 
 import config
@@ -36,6 +39,9 @@ import tracker
 import writer
 
 STAGING_DIR = Path(__file__).parent / "staging"
+TEMPLATES_DIR = Path(__file__).parent / "templates"
+EPISODE_TEMPLATE_PATH = TEMPLATES_DIR / "modern-wisdom-episode-template.md"
+PROCESSED_DIR = Path(__file__).parent / "processed"
 
 
 def _is_scraped(ep_num: int) -> bool:
@@ -54,6 +60,39 @@ def _save_to_staging(ep: scraper.EpisodeMeta, transcript: str) -> None:
         "slug": ep.slug,
         "url": ep.url,
     }, indent=2), encoding="utf-8")
+
+
+def _staged_episode_numbers() -> list[int]:
+    if not STAGING_DIR.exists():
+        return []
+    episode_nums: list[int] = []
+    for p in STAGING_DIR.glob("*_meta.json"):
+        try:
+            episode_nums.append(int(p.stem.split("_", 1)[0]))
+        except ValueError:
+            continue
+    return sorted(set(episode_nums))
+
+
+def _load_staged_episode(ep_num: int) -> tuple[scraper.EpisodeMeta, str]:
+    meta_file = STAGING_DIR / f"{ep_num}_meta.json"
+    transcript_file = STAGING_DIR / f"{ep_num}_transcript.txt"
+
+    if not meta_file.exists():
+        raise FileNotFoundError(str(meta_file))
+    if not transcript_file.exists():
+        raise FileNotFoundError(str(transcript_file))
+
+    meta_json = json.loads(meta_file.read_text(encoding="utf-8"))
+    ep = scraper.EpisodeMeta(
+        number=int(meta_json.get("number", ep_num)),
+        title=str(meta_json.get("title", "")),
+        guest=str(meta_json.get("guest", "")),
+        slug=str(meta_json.get("slug", "")),
+        url=str(meta_json.get("url", "")),
+    )
+    transcript = transcript_file.read_text(encoding="utf-8")
+    return ep, transcript
 
 
 # ---------------------------------------------------------------------------
@@ -338,6 +377,184 @@ def cmd_write_note(args: argparse.Namespace) -> None:
     print(f"Tracker updated for episode #{ep_num}.")
 
 
+def cmd_generate_processed(args: argparse.Namespace) -> None:
+    """
+    Generate Obsidian episode notes for every episode currently staged.
+    Reads {episode}_meta.json + {episode}_transcript.txt from staging/.
+    Writes final notes to processed/.
+
+    Does not modify staging files.
+    """
+    if not EPISODE_TEMPLATE_PATH.exists():
+        print(f"Template not found: {EPISODE_TEMPLATE_PATH}")
+        sys.exit(1)
+
+    if args.episode is not None:
+        episode_nums = [args.episode]
+    else:
+        episode_nums = _staged_episode_numbers()
+
+    if not episode_nums:
+        print("No staged episodes found in staging/.")
+        return
+
+    template_md = EPISODE_TEMPLATE_PATH.read_text(encoding="utf-8")
+    created_date = datetime.now().date().isoformat()
+
+    PROCESSED_DIR.mkdir(exist_ok=True)
+
+    total = len(episode_nums)
+    successes = 0
+    failures = 0
+    skipped = 0
+
+    for idx, ep_num in enumerate(episode_nums, start=1):
+        try:
+            ep, transcript = _load_staged_episode(ep_num)
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — missing staged files: {exc}")
+            continue
+
+        guest_for_filename = (ep.guest or "Unknown Guest").strip()
+        filename = writer.build_processed_filename(ep.number, guest_for_filename)
+        out_path = PROCESSED_DIR / filename
+
+        if out_path.exists() and not args.force:
+            skipped += 1
+            print(f"  ⏭  [{idx}/{total}] #{ep.number} — already generated")
+            continue
+
+        try:
+            note_md = summarizer.generate_notes_from_template(
+                transcript=transcript,
+                meta=ep,
+                template_markdown=template_md,
+                created_date=created_date,
+            )
+            transcript_block = f"\nTRANSCRIPT:\n{transcript.strip()}\n"
+            note_md = re.sub(r"\nTRANSCRIPT:\n[\s\S]*$", transcript_block, note_md.strip())
+            out_path.write_text(note_md, encoding="utf-8")
+            successes += 1
+            print(f"  ✅ [{idx}/{total}] #{ep.number} — wrote {out_path.name}")
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep.number} — generation failed: {exc}")
+
+        if idx < total and args.delay > 0:
+            time.sleep(args.delay)
+
+    print(f"\nDone. {successes} succeeded, {skipped} skipped, {failures} failed.")
+
+
+def cmd_rename_vault_range(args: argparse.Namespace) -> None:
+    """Rename existing vault notes for an episode range to the current naming scheme."""
+    start = args.start
+    end = args.end
+    if start > end:
+        start, end = end, start
+
+    vault_dir = config.output_dir()
+    total = end - start + 1
+    renamed = 0
+    skipped = 0
+    failures = 0
+
+    for idx, ep_num in enumerate(range(start, end + 1), start=1):
+        try:
+            ep, _transcript = _load_staged_episode(ep_num)
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — missing staged meta/transcript: {exc}")
+            continue
+
+        target_name = writer.build_filename(ep.number, ep.guest, ep.title)
+        target_path = vault_dir / target_name
+
+        # If already correct, nothing to do
+        if target_path.exists() and not args.force:
+            skipped += 1
+            print(f"  ⏭  [{idx}/{total}] #{ep_num} — already named correctly")
+            continue
+
+        # Find existing legacy file(s)
+        legacy_candidates = sorted(vault_dir.glob(f"Modern-Wisdom-{ep_num}-*.md"))
+        if not legacy_candidates:
+            skipped += 1
+            print(f"  ⏭  [{idx}/{total}] #{ep_num} — no legacy file found")
+            continue
+
+        if len(legacy_candidates) > 1:
+            failures += 1
+            names = ", ".join(p.name for p in legacy_candidates[:3])
+            extra = "" if len(legacy_candidates) <= 3 else f" (+{len(legacy_candidates) - 3} more)"
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — multiple legacy files found: {names}{extra}")
+            continue
+
+        legacy_path = legacy_candidates[0]
+
+        if args.dry_run:
+            print(f"  📝 [{idx}/{total}] #{ep_num} — would rename '{legacy_path.name}' -> '{target_path.name}'")
+            continue
+
+        try:
+            if target_path.exists() and args.force:
+                backup_path = target_path.with_suffix(target_path.suffix + f".bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+                target_path.rename(backup_path)
+            legacy_path.rename(target_path)
+            renamed += 1
+            print(f"  ✅ [{idx}/{total}] #{ep_num} — renamed to '{target_path.name}'")
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — rename failed: {exc}")
+
+    summary = f"\nDone. {renamed} renamed, {skipped} skipped, {failures} failed."
+    if args.dry_run:
+        summary += " (dry-run)"
+    print(summary)
+    print(f"Vault folder: {vault_dir.resolve()}")
+
+
+def cmd_write_notes_range(args: argparse.Namespace) -> None:
+    """Write staged notes (staging/{ep}_note.md) to the vault for a range."""
+    start = args.start
+    end = args.end
+
+    if start > end:
+        start, end = end, start
+
+    total = end - start + 1
+    successes = 0
+    failures = 0
+    skipped = 0
+
+    for idx, ep_num in enumerate(range(start, end + 1), start=1):
+        note_path = STAGING_DIR / f"{ep_num}_note.md"
+        if not note_path.exists():
+            skipped += 1
+            print(f"  ⏭  [{idx}/{total}] #{ep_num} — missing staged note (expected {note_path.name})")
+            continue
+
+        try:
+            ep, _transcript = _load_staged_episode(ep_num)
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — missing staged meta/transcript: {exc}")
+            continue
+
+        try:
+            notes_md = note_path.read_text(encoding="utf-8")
+            filepath = writer.write_note(notes_md, ep.number, ep.guest, ep.title)
+            tracker.mark_processed(ep.number, ep.guest, ep.title, ep.url, status="completed")
+            successes += 1
+            print(f"  ✅ [{idx}/{total}] #{ep.number} — wrote {filepath.name}")
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — write failed: {exc}")
+
+    print(f"\nDone. {successes} succeeded, {skipped} skipped, {failures} failed.")
+
+
 # ---------------------------------------------------------------------------
 # Argument parser
 # ---------------------------------------------------------------------------
@@ -397,6 +614,53 @@ def build_parser() -> argparse.ArgumentParser:
     p_sa.add_argument("--force", "-f", action="store_true", help="Re-scrape everything")
     p_sa.add_argument("--pages", type=int, default=200, help="Max listing pages to scan")
     p_sa.set_defaults(func=cmd_scrape_all)
+
+    # generate-processed  (LLM fills in episode template from staged transcript)
+    p_gp = sub.add_parser(
+        "generate-processed",
+        help="Generate episode notes into processed/ from staging/ using the episode template",
+    )
+    p_gp.add_argument(
+        "--episode",
+        "-e",
+        type=int,
+        default=None,
+        help="Generate for a single episode number (default: all staged)",
+    )
+    p_gp.add_argument(
+        "--delay",
+        "-d",
+        type=float,
+        default=0,
+        help="Optional delay (seconds) between LLM calls",
+    )
+    p_gp.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Overwrite already-generated processed notes",
+    )
+    p_gp.set_defaults(func=cmd_generate_processed)
+
+    # write-notes-range  (Option A Step 3 helper)
+    p_wnr = sub.add_parser(
+        "write-notes-range",
+        help="Write staging/{ep}_note.md to the vault for a numeric episode range",
+    )
+    p_wnr.add_argument("--start", type=int, required=True, help="Start episode number")
+    p_wnr.add_argument("--end", type=int, required=True, help="End episode number")
+    p_wnr.set_defaults(func=cmd_write_notes_range)
+
+    # rename-vault-range  (rename legacy vault notes to current naming)
+    p_rvr = sub.add_parser(
+        "rename-vault-range",
+        help="Rename vault notes for a numeric episode range to 'Modern Wisdom - {episode} - {guest}.md'",
+    )
+    p_rvr.add_argument("--start", type=int, required=True, help="Start episode number")
+    p_rvr.add_argument("--end", type=int, required=True, help="End episode number")
+    p_rvr.add_argument("--dry-run", action="store_true", help="Show what would be renamed without changing files")
+    p_rvr.add_argument("--force", "-f", action="store_true", help="If target exists, move it aside to a .bak and rename")
+    p_rvr.set_defaults(func=cmd_rename_vault_range)
 
     # write-note  (post-Cascade step)
     p_write = sub.add_parser("write-note", help="Write a pre-generated note to vault + tracker")
