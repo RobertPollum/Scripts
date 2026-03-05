@@ -47,8 +47,8 @@ def build_filename(episode_number: int, guest: str, title: str) -> str:
     Build the full .md filename for an episode.
     Example: Modern-Wisdom-1066-Dr-Kathryn-Paige-Harden-The-Genetics-of-Evil-Are-People-Born-Bad.md
     """
-    raw = f"Modern Wisdom {episode_number} - {guest} - {title}" if guest else f"Modern Wisdom {episode_number} - {title}"
-    return sanitize_filename(raw) + ".md"
+    raw = f"Modern Wisdom - {episode_number} - {guest}.md" if guest else f"Modern Wisdom - {episode_number}.md"
+    return sanitize_filename_keep_format(raw)
 
 
 def write_note(
@@ -67,3 +67,22 @@ def write_note(
 
     filepath.write_text(content, encoding="utf-8")
     return filepath
+
+
+_WINDOWS_ILLEGAL_CHARS_RE = re.compile(r"[<>:\"/\\|?*]")
+
+
+def sanitize_filename_keep_format(raw: str) -> str:
+    name = raw
+    name = name.replace("\u0000", "")
+    name = _WINDOWS_ILLEGAL_CHARS_RE.sub("", name)
+    name = re.sub(r"\s{2,}", " ", name)
+    name = name.strip(" .")
+    if len(name) > 200:
+        name = name[:200].rstrip(" .")
+    return name
+
+
+def build_processed_filename(episode_number: int, guest: str) -> str:
+    raw = f"Modern Wisdom - {episode_number} — {guest}.md" if guest else f"Modern Wisdom - {episode_number}.md"
+    return sanitize_filename_keep_format(raw)

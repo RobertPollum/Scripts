@@ -59,6 +59,24 @@ python main.py process-latest --count 5
 python main.py process-all
 ```
 
+### Generate `processed/` episode notes from `staging/` (needs OPENAI_API_KEY)
+
+If you already scraped transcripts into `staging/` and want to generate notes in bulk using `templates/modern-wisdom-episode-template.md`:
+
+```powershell
+# Generate notes for every episode staged in staging/
+python main.py generate-processed
+
+# Generate one episode
+python main.py generate-processed --episode 1066
+
+# Add a small delay between LLM calls
+python main.py generate-processed --delay 2
+
+# Overwrite existing files in processed/
+python main.py generate-processed --force
+```
+
 ### Utility
 
 ```powershell
@@ -81,6 +99,7 @@ python main.py status    # tracker contents
 
 - **Notes** → `<OBSIDIAN_VAULT_PATH>/Podcasts/` with POSIX-compliant, OneDrive-safe filenames
 - **Staged transcripts** → `staging/` (one `.txt` + one `_meta.json` per episode)
+- **Processed notes** → `processed/` (generated notes prior to writing into the vault)
 - **Tracker** → `processed_episodes.csv` (human-readable CSV)
 - Filenames follow the pattern: `Modern-Wisdom-1066-Dr-Kathryn-Paige-Harden-The-Genetics-of-Evil.md`
 

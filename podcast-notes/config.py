@@ -16,8 +16,8 @@ OPENAI_BASE_URL: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 # ---------------------------------------------------------------------------
 # Obsidian vault
 # ---------------------------------------------------------------------------
-OBSIDIAN_VAULT_PATH: str = os.getenv("OBSIDIAN_VAULT_PATH", "C:/Users/rober/Robert-Vault")
-OBSIDIAN_SUBFOLDER: str = os.getenv("OBSIDIAN_SUBFOLDER", "Podcasts")
+OBSIDIAN_VAULT_PATH: str = os.getenv("OBSIDIAN_VAULT_PATH", "C:/Users/rober/OneDrive/Documents/Notes/Obsidian/")
+OBSIDIAN_SUBFOLDER: str = os.getenv("OBSIDIAN_SUBFOLDER", "Robert-Vault/Podcasts/Modern Wisdom")
 
 # ---------------------------------------------------------------------------
 # Podscripts

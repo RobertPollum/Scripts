@@ -110,3 +110,68 @@ def generate_notes(transcript: str, meta: EpisodeMeta) -> str:
         raise RuntimeError("LLM returned an empty response.")
 
     return content.strip()
+
+
+def generate_notes_from_template(
+    *,
+    transcript: str,
+    meta: EpisodeMeta,
+    template_markdown: str,
+    created_date: str,
+) -> str:
+    if not config.OPENAI_API_KEY:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. "
+            "Copy .env.example to .env and fill in your key."
+        )
+
+    client = OpenAI(
+        api_key=config.OPENAI_API_KEY,
+        base_url=config.OPENAI_BASE_URL,
+    )
+
+    episode_title = meta.title
+    if meta.guest and episode_title.startswith(meta.guest + " - "):
+        episode_title = episode_title[len(meta.guest) + 3 :]
+
+    template_prefilled = (
+        template_markdown.replace("{{guest}}", meta.guest)
+        .replace("{{date}}", created_date)
+        .strip()
+    )
+
+    user_message = (
+        "Fill in the following Obsidian note template using the transcript and metadata.\n\n"
+        "RULES:\n"
+        "- Return ONLY the final Obsidian markdown note (no code fences, no extra commentary).\n"
+        "- Keep the structure and headings from the template.\n"
+        "- Replace [Episode Number], [Guest Name], and **Episode Title** with the real values.\n"
+        "- Use Transcript Source as: "
+        f"{meta.url} (Podscripts)\n"
+        "- In the TRANSCRIPT section, keep the placeholder (do not paste the transcript).\n\n"
+        "METADATA:\n"
+        f"Episode Number: {meta.number}\n"
+        f"Guest: {meta.guest}\n"
+        f"Episode Title: {episode_title}\n"
+        f"Transcript Source URL: {meta.url}\n\n"
+        "TEMPLATE:\n"
+        f"{template_prefilled}\n\n"
+        "TRANSCRIPT:\n"
+        f"{transcript}"
+    )
+
+    response = client.chat.completions.create(
+        model=config.OPENAI_MODEL,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0.3,
+        max_tokens=8192,
+    )
+
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("LLM returned an empty response.")
+
+    return content.strip()
