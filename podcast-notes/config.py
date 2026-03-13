@@ -28,6 +28,27 @@ PODSCRIPTS_BASE_URL: str = os.getenv(
 )
 
 # ---------------------------------------------------------------------------
+# Budget enforcement
+# ---------------------------------------------------------------------------
+# Admin API key (separate from OPENAI_API_KEY) — required to query the Costs API.
+# Generate one at: https://platform.openai.com/settings/organization/admin-keys
+OPENAI_ADMIN_KEY: str = os.getenv("OPENAI_ADMIN_KEY", "")
+# Monthly spend ceiling in USD (0 = no budget check performed)
+OPENAI_MONTHLY_BUDGET_USD: float = float(os.getenv("OPENAI_MONTHLY_BUDGET_USD", "0"))
+
+# ---------------------------------------------------------------------------
+# Rate limiting (Option B batch mode)
+# ---------------------------------------------------------------------------
+# Requests per minute ceiling (0 = no limit enforced)
+OPENAI_RPM_LIMIT: int = int(os.getenv("OPENAI_RPM_LIMIT", "500"))
+# Tokens per minute ceiling (0 = no limit enforced)
+OPENAI_TPM_LIMIT: int = int(os.getenv("OPENAI_TPM_LIMIT", "200000"))
+# Max tokens consumed in a single run (0 = no limit enforced)
+OPENAI_RUN_TOKEN_CAP: int = int(os.getenv("OPENAI_RUN_TOKEN_CAP", "0"))
+# Seconds to sleep between API calls when no other throttle applies
+OPENAI_REQUEST_DELAY: float = float(os.getenv("OPENAI_REQUEST_DELAY", "0.5"))
+
+# ---------------------------------------------------------------------------
 # Tracker file (lives next to this script)
 # ---------------------------------------------------------------------------
 TRACKER_PATH: str = str(Path(__file__).parent / "processed_episodes.csv")

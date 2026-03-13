@@ -51,6 +51,20 @@ def build_filename(episode_number: int, guest: str, title: str) -> str:
     return sanitize_filename_keep_format(raw)
 
 
+def _ensure_blank_line_before_tags(content: str) -> str:
+    """
+    Ensure a blank line exists between the Tags heading and the tag line.
+
+    Without a blank line, Obsidian interprets ``#tag`` at the start of
+    the next line as a Markdown heading instead of an inline tag.
+    """
+    return re.sub(
+        r"(## 🏷 Tags\s*)\n(#)",
+        r"\1\n\n\2",
+        content,
+    )
+
+
 def write_note(
     content: str,
     episode_number: int,
@@ -65,6 +79,7 @@ def write_note(
     filename = build_filename(episode_number, guest, title)
     filepath = out_dir / filename
 
+    content = _ensure_blank_line_before_tags(content)
     filepath.write_text(content, encoding="utf-8")
     return filepath
 

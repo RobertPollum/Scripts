@@ -447,6 +447,98 @@ def cmd_generate_processed(args: argparse.Namespace) -> None:
     print(f"\nDone. {successes} succeeded, {skipped} skipped, {failures} failed.")
 
 
+def cmd_summarize_staged(args: argparse.Namespace) -> None:
+    """
+    Option B batch mode: for every staged episode that has a transcript but
+    has NOT yet been processed, call OpenAI to generate notes and write to vault.
+
+    Skips scraping entirely — transcripts must already be in staging/.
+    Respects OPENAI_RPM_LIMIT, OPENAI_TPM_LIMIT, OPENAI_RUN_TOKEN_CAP, and
+    OPENAI_REQUEST_DELAY from .env / config.
+    """
+    if args.episode is not None:
+        staged_nums = [args.episode]
+    else:
+        staged_nums = _staged_episode_numbers()
+
+    if not staged_nums:
+        print("No staged episodes found in staging/.")
+        return
+
+    if args.force:
+        to_process = staged_nums
+    else:
+        to_process = [n for n in staged_nums if not tracker.is_processed(n)]
+
+    if not to_process:
+        print("All staged episodes are already processed. Use --force to re-process.")
+        return
+
+    limiter = summarizer.RateLimiter(
+        rpm_limit=config.OPENAI_RPM_LIMIT,
+        tpm_limit=config.OPENAI_TPM_LIMIT,
+        run_token_cap=config.OPENAI_RUN_TOKEN_CAP,
+    )
+
+    total = len(to_process)
+    successes = 0
+    failures = 0
+    skipped = 0
+
+    print(f"\nSummarizing {total} staged episode(s) via OpenAI [{config.OPENAI_MODEL}]")
+    print(f"  RPM limit : {config.OPENAI_RPM_LIMIT or 'none'}")
+    print(f"  TPM limit : {config.OPENAI_TPM_LIMIT or 'none'}")
+    print(f"  Token cap : {config.OPENAI_RUN_TOKEN_CAP or 'none'}")
+    print(f"  Req delay : {config.OPENAI_REQUEST_DELAY}s\n")
+
+    for idx, ep_num in enumerate(to_process, start=1):
+        transcript_file = STAGING_DIR / f"{ep_num}_transcript.txt"
+        if not transcript_file.exists():
+            skipped += 1
+            print(f"  ⏭  [{idx}/{total}] #{ep_num} — transcript missing, skipping")
+            continue
+
+        try:
+            ep, transcript = _load_staged_episode(ep_num)
+        except Exception as exc:
+            failures += 1
+            print(f"  ❌ [{idx}/{total}] #{ep_num} — failed to load staged files: {exc}")
+            continue
+
+        print(f"  🤖 [{idx}/{total}] #{ep_num} — {ep.guest or ep.title} …", end=" ", flush=True)
+
+        try:
+            notes_md = summarizer.generate_notes_with_limit(
+                transcript,
+                ep,
+                limiter=limiter,
+                request_delay=config.OPENAI_REQUEST_DELAY,
+            )
+        except RuntimeError as exc:
+            failures += 1
+            print(f"\n  ❌ [{idx}/{total}] #{ep_num} — {exc}")
+            if "token cap" in str(exc).lower():
+                print(f"\nRun token cap reached after {successes} episodes. Re-run to continue.")
+                break
+            continue
+        except Exception as exc:
+            failures += 1
+            print(f"\n  ❌ [{idx}/{total}] #{ep_num} — OpenAI error: {exc}")
+            continue
+
+        try:
+            filepath = writer.write_note(notes_md, ep.number, ep.guest, ep.title)
+            tracker.mark_processed(ep.number, ep.guest, ep.title, ep.url, status="completed")
+            successes += 1
+            print(f"✅  → {filepath.name}  [{limiter.total_tokens_used:,} tokens used]")
+        except Exception as exc:
+            failures += 1
+            print(f"\n  ❌ [{idx}/{total}] #{ep_num} — write failed: {exc}")
+
+    print(f"\nDone. {successes} succeeded, {skipped} skipped, {failures} failed.")
+    print(f"Total tokens consumed this run: {limiter.total_tokens_used:,}")
+
+
 def cmd_rename_vault_range(args: argparse.Namespace) -> None:
     """Rename existing vault notes for an episode range to the current naming scheme."""
     start = args.start
@@ -661,6 +753,21 @@ def build_parser() -> argparse.ArgumentParser:
     p_rvr.add_argument("--dry-run", action="store_true", help="Show what would be renamed without changing files")
     p_rvr.add_argument("--force", "-f", action="store_true", help="If target exists, move it aside to a .bak and rename")
     p_rvr.set_defaults(func=cmd_rename_vault_range)
+
+    # summarize-staged  (Option B batch — skip scraping, only OpenAI + vault)
+    p_ss = sub.add_parser(
+        "summarize-staged",
+        help="Batch summarize all staged transcripts via OpenAI and write to vault (no scraping)",
+    )
+    p_ss.add_argument(
+        "--episode", "-e", type=int, default=None,
+        help="Process a single episode number (default: all staged not yet processed)",
+    )
+    p_ss.add_argument(
+        "--force", "-f", action="store_true",
+        help="Re-process episodes already marked completed in the tracker",
+    )
+    p_ss.set_defaults(func=cmd_summarize_staged)
 
     # write-note  (post-Cascade step)
     p_write = sub.add_parser("write-note", help="Write a pre-generated note to vault + tracker")
