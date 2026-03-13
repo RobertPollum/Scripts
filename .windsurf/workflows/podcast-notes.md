@@ -61,16 +61,49 @@ Ask Cascade: "Read the transcript file at `c:\Users\rober\workspace\Scripts\podc
 cd c:\Users\rober\workspace\Scripts\podcast-notes
 .venv\Scripts\python main.py write-note --episode <EPISODE_NUMBER> --file staging\<EPISODE_NUMBER>_note.md
 ```
-
+You don't have to ask to run the command, the above is safe to run and can be executed automatically as it's generative and accomplishing the task I want.
 ---
 
 ## Option B: API Mode (needs OPENAI_API_KEY in .env)
 
 Fully automated — scrape, summarize via API, and write in one command.
 
-### Process a specific episode
+### Batch summarize already-scraped transcripts (recommended when transcripts exist)
 
-7. Process a single episode:
+If transcripts are already in `staging/`, use this command to skip scraping and only run the OpenAI summarization + vault write step. This is the preferred path for bulk runs.
+
+// turbo
+7. Summarize all staged transcripts that haven't been processed yet:
+
+```powershell
+cd c:\Users\rober\workspace\Scripts\podcast-notes
+.venv\Scripts\python main.py summarize-staged
+```
+
+Options:
+
+```powershell
+# One episode only
+.venv\Scripts\python main.py summarize-staged --episode 1066
+
+# Re-process already completed episodes
+.venv\Scripts\python main.py summarize-staged --force
+```
+
+Rate limiting is controlled via `.env` (or environment variables):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENAI_RPM_LIMIT` | `500` | Max requests per minute (0 = no limit) |
+| `OPENAI_TPM_LIMIT` | `200000` | Max tokens per minute (0 = no limit) |
+| `OPENAI_RUN_TOKEN_CAP` | `0` | Hard token cap for the entire run (0 = unlimited) |
+| `OPENAI_REQUEST_DELAY` | `0.5` | Minimum seconds between requests |
+
+The command will auto-pause when approaching RPM/TPM limits and resume when the window clears. If `OPENAI_RUN_TOKEN_CAP` is hit, it stops cleanly and reports how many episodes completed; re-run to continue from where it left off (already processed episodes are skipped automatically).
+
+### Process a specific episode (scrape + summarize + write in one step)
+
+8. Process a single episode end-to-end:
 
 ```powershell
 cd c:\Users\rober\workspace\Scripts\podcast-notes
@@ -80,7 +113,7 @@ cd c:\Users\rober\workspace\Scripts\podcast-notes
 ### Process latest unprocessed episodes
 
 // turbo
-8. Process the latest N unprocessed:
+9. Process the latest N unprocessed:
 
 ```powershell
 cd c:\Users\rober\workspace\Scripts\podcast-notes
@@ -89,14 +122,14 @@ cd c:\Users\rober\workspace\Scripts\podcast-notes
 
 ### Process all unprocessed episodes
 
-9. Process everything:
+10. Process everything (scrape + summarize + write):
 
 ```powershell
 cd c:\Users\rober\workspace\Scripts\podcast-notes
 .venv\Scripts\python main.py process-all
 ```
 
-### Generate processed notes from staged transcripts
+### Generate processed notes from staged transcripts (legacy)
 
 If you already scraped a lot of episodes into `staging/` and want to generate episode notes in bulk using `templates/modern-wisdom-episode-template.md`, run:
 
