@@ -16,33 +16,46 @@ FILE = os.path.join(os.getcwd(), "networkinfo.log")
 
 
 def ping():
-    # to ping a particular IP
+    # Send ICMP Echo Request packet to ping a particular IP
+    import subprocess
+    import platform
+    
+    host = "192.168.86.51"
+    print(f"Attempting to ping {host} with ICMP Echo Request...")
+    
     try:
-        socket.setdefaulttimeout(3)
+        # Determine the ping command based on the operating system
+        if platform.system().lower() == "windows":
+            # Windows ping command: -n 1 (send 1 packet), -w 3000 (timeout 3 seconds)
+            result = subprocess.run(
+                ["ping", "-n", "1", "-w", "3000", host],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+        else:
+            # Unix/Linux ping command: -c 1 (send 1 packet), -W 3 (timeout 3 seconds)
+            result = subprocess.run(
+                ["ping", "-c", "1", "-W", "3", host],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
         
-        # if data interruption occurs for 3
-        # seconds, <except> part will be executed
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # AF_INET: address family
-        # SOCK_STREAM: type for TCP
-
-        host = "192.168.86.51"
-        port = 53
-
-        server_address = (host, port)
-        s.connect(server_address)
-
-    except OSError as error:
+        # Check if ping was successful (return code 0)
+        if result.returncode == 0:
+            print("Ping successful - ICMP Echo Reply received")
+            return True
+        else:
+            print("Ping failed - no ICMP Echo Reply received")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print("Ping failed - timeout after 5 seconds")
         return False
-        # function returns false value
-        # after data interruption
-
-    else:
-        s.close()
-        # closing the connection after the
-        # communication with the server is completed
-        return True
+    except Exception as error:
+        print(f"Ping failed - error: {str(error)}")
+        return False
 
 
 def calculate_time(start, stop):
@@ -90,9 +103,9 @@ def reset_tailscale():
     """SSH into QNAP and restart Tailscale with accept-routes=false"""
     try:
         # Replace with your QNAP credentials
-        host = "1.1.1.1"  # Using same IP from ping() function
-        username = "a named user"  # Replace with your username
-        password = "a random sTr!ng 0f Ch@r@cters"  # Replace with your password
+        host = "192.168.86.51"  # Using same IP from ping() function
+        username = "RobertMPollum"  # Replace with your username
+        password = "AN4$BlastToThePast"  # Replace with your password
 
         # Create SSH connection
         conn = Connection(
@@ -104,14 +117,15 @@ def reset_tailscale():
         )
 
         # Execute Tailscale command
-        cmd = "cd /share/CACHEDEV1_DATA/.qpkg/Tailscale && ./tailscale up --accept-routes=false"
+        # cmd = "cd /share/CACHEDEV1_DATA/.qpkg/Tailscale && ./tailscale up --accept-routes=false"
+        cmd = "ls -la"
         result = conn.run(cmd, hide=True)
 
         if result.ok:
             print("Tailscale reset successful")
             
             # List directories after successful connection
-            list_cmd = "ls -la /share/CACHEDEV1_DATA/.qpkg/Tailscale"
+            list_cmd = "ls -la /share/CACHEDEV1_DATA/.qpkg"
             dir_result = conn.run(list_cmd, hide=True)
             
             if dir_result.ok:
@@ -158,16 +172,21 @@ def main():
 
     else:
         # if false
+        attempt_count = 1
         while True:
           
             # infinite loop to see if the connection is acquired
+            print(f"Connection attempt #{attempt_count}")
             if not ping():
                 
                 # if connection not acquired
+                print("Connection failed, retrying in 1 second...")
+                attempt_count += 1
                 time.sleep(1)
             else:
                 
                 # if connection is acquired
+                print(f"Connection established after {attempt_count} attempts")
                 first_check()
                 print(monitoring_date_time)
                 break
@@ -180,49 +199,55 @@ def main():
         file.write("\n")
         file.write(monitoring_date_time + "\n")
 
-    while True:
+    # while True: #
       
-        # infinite loop, as we are monitoring
-        # the network connection till the machine runs
-        if ping():
+    # infinite loop, as we are monitoring
+    # the network connection till the machine runs
+    print("Checking connection status...")
+    down_time = datetime.datetime.now()
+    if not ping():
+        
+        # if false: the loop will execute after every 5 seconds
+        # fail message will be displayed
+        
+        fail_msg = "disconnected at: " + str(down_time).split(".")[0]
+        print(fail_msg)
+        
+        with open(FILE, "a") as file:
+            # writes into the log file
+            file.write(fail_msg + "\n")
+
+        time.sleep(5)
+
+    else:
+
+        # Add Tailscale reset attempt
+        reset_tailscale()
+
+        reconnect_attempt = 1
+        while not ping():
             
-            # if true: the loop will execute after every 5 seconds
-            time.sleep(5)
+            # infinite loop, will run till ping() return true
+            print(f"Reconnection attempt #{reconnect_attempt}")
+            reconnect_attempt += 1
+            time.sleep(1)
 
-        else:
-            # if false: fail message will be displayed
-            down_time = datetime.datetime.now()
-            fail_msg = "disconnected at: " + str(down_time).split(".")[0]
-            print(fail_msg)
+        up_time = datetime.datetime.now()
+        
+        # after loop breaks, connection restored
+        uptime_message = "connected again: " + str(up_time).split(".")[0]
 
-            # Add Tailscale reset attempt
-            reset_tailscale()
+        down_time = calculate_time(down_time, up_time)
+        unavailablity_time = "connection was unavailable for: " + down_time
 
-            with open(FILE, "a") as file:
-                # writes into the log file
-                file.write(fail_msg + "\n")
+        print(uptime_message)
+        print(unavailablity_time)
 
-            while not ping():
-              
-                # infinite loop, will run till ping() return true
-                time.sleep(1)
-
-            up_time = datetime.datetime.now()
+        with open(FILE, "a") as file:
             
-            # after loop breaks, connection restored
-            uptime_message = "connected again: " + str(up_time).split(".")[0]
-
-            down_time = calculate_time(down_time, up_time)
-            unavailablity_time = "connection was unavailable for: " + down_time
-
-            print(uptime_message)
-            print(unavailablity_time)
-
-            with open(FILE, "a") as file:
-                
-                # log entry for connection restoration time,
-                # and unavailability time
-                file.write(uptime_message + "\n")
-                file.write(unavailablity_time + "\n")
+            # log entry for connection restoration time,
+            # and unavailability time
+            file.write(uptime_message + "\n")
+            file.write(unavailablity_time + "\n")
 
 main()
