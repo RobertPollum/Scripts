@@ -30,7 +30,16 @@ fi
 msg_ok "binder_linux module is loaded"
 
 # -------------------------------------------------------
-# STEP 2: Base dependencies
+# STEP 2: Create default user
+# -------------------------------------------------------
+msg_info "Creating default user 'waydroid'"
+useradd -m -s /bin/bash waydroid
+echo "waydroid:waydroid" | chpasswd
+usermod -aG sudo waydroid
+msg_ok "User 'waydroid' created (password: waydroid)"
+
+# -------------------------------------------------------
+# STEP 3: Base dependencies
 # -------------------------------------------------------
 msg_info "Installing base dependencies"
 $STD apt-get install -y \
@@ -57,7 +66,7 @@ $STD apt-get install -y \
 msg_ok "Base dependencies installed"
 
 # -------------------------------------------------------
-# STEP 3: Install Waydroid
+# STEP 4: Install Waydroid
 # -------------------------------------------------------
 msg_info "Adding Waydroid repository"
 export DISTRO="bookworm"
@@ -72,14 +81,14 @@ $STD apt-get install -y waydroid
 msg_ok "Waydroid installed"
 
 # -------------------------------------------------------
-# STEP 4: Initialize Waydroid with GAPPS image
+# STEP 5: Initialize Waydroid with GAPPS image
 # -------------------------------------------------------
 msg_info "Initializing Waydroid with GApps image (this may take a while)"
 $STD waydroid init -s GAPPS -f
 msg_ok "Waydroid initialized with GApps"
 
 # -------------------------------------------------------
-# STEP 5: Install waydroid_script (casualsnek) for Magisk
+# STEP 6: Install waydroid_script (casualsnek) for Magisk
 # -------------------------------------------------------
 msg_info "Installing waydroid_script for Magisk patching"
 $STD git clone https://github.com/casualsnek/waydroid_script /opt/waydroid_script
@@ -91,29 +100,30 @@ $STD python3 /opt/waydroid_script/main.py install magisk
 msg_ok "Magisk patched into Waydroid image"
 
 # -------------------------------------------------------
-# STEP 6: Configure VNC server
+# STEP 7: Configure VNC server
 # -------------------------------------------------------
 msg_info "Configuring VNC server"
 VNC_PASS="waydroid"
-mkdir -p /root/.vnc
+mkdir -p /home/waydroid/.vnc
 
 # Set VNC password
-echo "${VNC_PASS}" | vncpasswd -f >/root/.vnc/passwd
-chmod 600 /root/.vnc/passwd
+echo "${VNC_PASS}" | vncpasswd -f >/home/waydroid/.vnc/passwd
+chmod 600 /home/waydroid/.vnc/passwd
+chown -R waydroid:waydroid /home/waydroid/.vnc
 
 # VNC xstartup for XFCE
-cat <<'EOF' >/root/.vnc/xstartup
+cat <<'EOF' >/home/waydroid/.vnc/xstartup
 #!/bin/bash
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 export XKL_XMODMAP_DISABLE=1
 exec startxfce4
 EOF
-chmod +x /root/.vnc/xstartup
+chmod +x /home/waydroid/.vnc/xstartup
 msg_ok "VNC configured (default password: waydroid)"
 
 # -------------------------------------------------------
-# STEP 7: systemd service for VNC
+# STEP 8: systemd service for VNC
 # -------------------------------------------------------
 msg_info "Creating VNC systemd service"
 cat <<EOF >/etc/systemd/system/vncserver@.service
@@ -123,9 +133,9 @@ After=syslog.target network.target
 
 [Service]
 Type=forking
-User=root
+User=waydroid
 PAMName=login
-PIDFile=/root/.vnc/%H%i.pid
+PIDFile=/home/waydroid/.vnc/%H%i.pid
 ExecStartPre=-/usr/bin/vncserver -kill :%i > /dev/null 2>&1
 ExecStart=/usr/bin/vncserver -depth 24 -geometry 1920x1080 :%i
 ExecStop=/usr/bin/vncserver -kill :%i
@@ -142,7 +152,7 @@ $STD systemctl start vncserver@1.service
 msg_ok "VNC server service enabled and started"
 
 # -------------------------------------------------------
-# STEP 8: systemd service for noVNC (web access)
+# STEP 9: systemd service for noVNC (web access)
 # -------------------------------------------------------
 msg_info "Creating noVNC web service"
 cat <<EOF >/etc/systemd/system/novnc.service
@@ -152,7 +162,7 @@ After=network.target vncserver@1.service
 
 [Service]
 Type=simple
-User=root
+User=waydroid
 ExecStart=/usr/bin/websockify --web=/usr/share/novnc/ 6080 localhost:5901
 Restart=on-failure
 RestartSec=5
@@ -167,7 +177,7 @@ $STD systemctl start novnc.service
 msg_ok "noVNC web service enabled and started (port 6080)"
 
 # -------------------------------------------------------
-# STEP 9: systemd service for Waydroid container
+# STEP 10: systemd service for Waydroid container
 # -------------------------------------------------------
 msg_info "Enabling Waydroid container service"
 $STD systemctl enable waydroid-container.service
@@ -175,7 +185,7 @@ $STD systemctl start waydroid-container.service
 msg_ok "Waydroid container service enabled"
 
 # -------------------------------------------------------
-# STEP 10: Helper scripts
+# STEP 11: Helper scripts
 # -------------------------------------------------------
 msg_info "Installing helper scripts"
 
@@ -227,7 +237,7 @@ chmod +x /usr/local/bin/waydroid-mount-photos
 msg_ok "Helper scripts installed"
 
 # -------------------------------------------------------
-# STEP 11: Post-install instructions file
+# STEP 12: Post-install instructions file
 # -------------------------------------------------------
 cat <<EOF >/root/WAYDROID-SETUP.txt
 =======================================================
@@ -236,6 +246,8 @@ cat <<EOF >/root/WAYDROID-SETUP.txt
 
 1. ACCESS DESKTOP
    Open browser: http://<LXC_IP>:6080/vnc.html
+   Linux user:    waydroid
+   Linux pass:    waydroid
    VNC password:  waydroid
    Or VNC client: <LXC_IP>:5900
 

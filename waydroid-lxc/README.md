@@ -16,7 +16,7 @@ This is a drop-in replacement for Windows Subsystem for Android.
 Run this one-liner from the **Proxmox host shell**:
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/ProxmoxVED/main/ct/waydroid.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/RobertPollum/Scripts/main/waydroid-lxc/ct/waydroid.sh)"
 ```
 
 > Replace `YOUR_USERNAME/ProxmoxVED` with your fork path if submitting to community-scripts.
@@ -60,6 +60,14 @@ lsmod | grep binder
 | Privileged  | Yes (required) |
 | VNC port    | 5900       |
 | noVNC port  | 6080       |
+
+## Default Credentials
+
+| Access        | Username   | Password   |
+|---------------|------------|------------|
+| LXC shell     | `root`     | set by Proxmox during container creation |
+| Linux user    | `waydroid` | `waydroid` |
+| VNC / noVNC   | `waydroid` | `waydroid` |
 
 ---
 
