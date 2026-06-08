@@ -16,3 +16,7 @@ podcast-notes/processed_episodes.csv
 # Podcast notes processed outputs
 podcast-notes/processed/
 podcast-notes/staging/
+
+# Home-lab service secrets
+home-lab/services.md
+
