@@ -1,0 +1,6 @@
+# Local environment variables — contains private paths
+.env
+
+# Runtime artifacts
+*.log
+hook_debug.log
