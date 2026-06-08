@@ -1,0 +1,279 @@
+﻿
+
+Filename   : arr_bazarr_direct.py
+LineNumber : 108
+Line       :     print("\n⚠️  Still needs manual config at http://192.168.86.103:6767")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_direct.py
+
+Filename   : arr_bazarr_final.py
+LineNumber : 96
+Line       :     print("   Configure manually at http://192.168.86.103:6767 → Settings → Sonarr / Radarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_final.py
+
+Filename   : arr_bazarr_patch.py
+LineNumber : 98
+Line       :     print("   Will need to configure manually at http://192.168.86.103:6767")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_patch.py
+
+Filename   : arr_bazarr_sed.py
+LineNumber : 109
+Line       :     print("   Needs manual setup at: http://192.168.86.103:6767 → Settings → Sonarr / Radarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_sed.py
+
+Filename   : arr_bazarr_venv.py
+LineNumber : 116
+Line       :     print("   http://192.168.86.103:6767 → Settings → Sonarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_venv.py
+
+Filename   : arr_bazarr_venv.py
+LineNumber : 118
+Line       :     print("   http://192.168.86.103:6767 → Settings → Radarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_venv.py
+
+Filename   : arr_bazarr_yaml.py
+LineNumber : 99
+Line       :     print("   Verify at http://192.168.86.103:6767 → Settings → Sonarr/Radarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_bazarr_yaml.py
+
+Filename   : arr_configure.py
+LineNumber : 200
+Line       :         print("  [bazarr] ⚠️  No API key — configure manually at http://192.168.86.103:6767")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_configure.py
+
+Filename   : arr_configure.py
+LineNumber : 236
+Line       :         print("  [bazarr]    Configure manually at http://192.168.86.103:6767 → Settings → Sonarr/Radarr")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_configure.py
+
+Filename   : arr_configure.py
+LineNumber : 319
+Line       :     print("    → http://192.168.86.96:9696 → Indexers → Add Indexer")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_configure.py
+
+Filename   : arr_configure.py
+LineNumber : 320
+Line       :     print("  • Readarr: Set root folder + link to Calibre-Web (192.168.86.88)")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_configure.py
+
+Filename   : arr_install.py
+LineNumber : 45
+Line       :         "note": "Book/eBook downloader — pairs with Calibre-Web (192.168.86.88)",
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_install.py
+
+Filename   : arr_install.py
+LineNumber : 201
+Line       :     print(f"  3. In Radarr/Sonarr/Readarr → Settings → Download Clients → add qBittorrent (192.168.86.100:8080)")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_install.py
+
+Filename   : arr_mount_finish.py
+LineNumber : 3
+Line       : 1. Add 192.168.86.93 rw to CACHEDEV1_DATA/Multimedia export (the actual mount path)
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_mount_finish.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 2
+Line       : Add Proxmox host (192.168.86.93) as rw,no_root_squash to QNAP NFS
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 47
+Line       : # Check if 192.168.86.93 already has rw access to Multimedia
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 54
+Line       : # We need to add 192.168.86.93(rw,...) to both Multimedia export lines.
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 56
+Line       : # 1. "/share/CACHEDEV1_DATA/Multimedia" *(ro,...) 192.168.86.64(rw,...) ...
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 57
+Line       : # 2. "/share/NFSv=4/Multimedia" *(ro,...) 192.168.86.64(rw,...) ...
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix3.py
+LineNumber : 67
+Line       :         # Grab the options from the 192.168.86.64 entry as a template
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix3.py
+
+Filename   : arr_nfs_fix4.py
+LineNumber : 48
+Line       :         # Get options from 192.168.86.64 entry as template for rw access
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_nfs_fix4.py
+
+Filename   : arr_probe12.py
+LineNumber : 24
+Line       : # Try from inside the container (localhost) — qBT default allows bypass from 127.0.0.1
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe12.py
+
+Filename   : arr_probe12.py
+LineNumber : 26
+Line       : out, err = pct("curl -s -c /tmp/qbt_cookies.txt -b /tmp/qbt_cookies.txt -X POST http://127.0.0.1:8090/api/v2/auth/login -d 'username=admin&password=adminadmin'")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe12.py
+
+Filename   : arr_probe12.py
+LineNumber : 28
+Line       : out, err = pct("curl -s -c /tmp/qbt_cookies.txt -b /tmp/qbt_cookies.txt http://127.0.0.1:8090/api/v2/app/version")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe12.py
+
+Filename   : arr_probe17.py
+LineNumber : 42
+Line       :     "pct exec 109 -- bash -c \"echo -e '\\nWebUI\\\\\\\\AuthSubnetWhitelistEnabled=true\\nWebUI\\\\\\\\AuthSubnetWhitelist=192.168.86.0/24' "
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe17.py
+
+Filename   : arr_probe6.py
+LineNumber : 21
+Line       : # Test from inside the LXC (localhost) - qBT skips auth for 127.0.0.1 by default
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe6.py
+
+Filename   : arr_probe6.py
+LineNumber : 23
+Line       : ver = run("109", "curl -s http://127.0.0.1:8090/api/v2/app/version")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_probe6.py
+
+Filename   : arr_qbt_whitelist.py
+LineNumber : 62
+Line       : WebUI\\AuthSubnetWhitelist=192.168.86.0/24
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_qbt_whitelist.py
+
+Filename   : arr_qbt_whitelist.py
+LineNumber : 168
+Line       :         print("  ⚠️  Keys not persisting — configure manually at http://192.168.86.103:6767")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_qbt_whitelist.py
+
+Filename   : arr_qnap_api.py
+LineNumber : 2
+Line       : Use QNAP Web API to permanently add 192.168.86.93 as rw NFS host
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_qnap_api.py
+
+Filename   : arr_qnap_verify.py
+LineNumber : 80
+Line       :     print("The QNAP export is server-controlled — need to add 192.168.86.93 in QNAP NFS UI.")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\arr_qnap_verify.py
+
+Filename   : ct110_flare_setup.py
+LineNumber : 129
+Line       : print("=== Step 4: Update Prowlarr proxy → http://192.168.86.96:8191 ===")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\ct110_flare_setup.py
+
+Filename   : ct110_flare_setup2.py
+LineNumber : 129
+Line       : print("=== Step 4: Update Prowlarr proxy → http://192.168.86.96:8191 ===")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\ct110_flare_setup2.py
+
+Filename   : fix_host2.py
+LineNumber : 22
+Line       :     gateway 192.168.86.1
+Path       : C:\Users\rober\workspace\Scripts\home-lab\fix_host2.py
+
+Filename   : fix_static_ips.py
+LineNumber : 42
+Line       :     gateway 192.168.86.1
+Path       : C:\Users\rober\workspace\Scripts\home-lab\fix_static_ips.py
+
+Filename   : fix_static_ips.py
+LineNumber : 96
+Line       :         f"ip route add default via 192.168.86.1 dev eth0 2>/dev/null; true",
+Path       : C:\Users\rober\workspace\Scripts\home-lab\fix_static_ips.py
+
+Filename   : flaresolverr_fix_dns.py
+LineNumber : 4
+Line       : 1. CT114 resolv.conf reverted to router DNS (192.168.86.1) which blocks torrent sites.
+Path       : C:\Users\rober\workspace\Scripts\home-lab\flaresolverr_fix_dns.py
+
+Filename   : jellyfin_migrate.py
+LineNumber : 2
+Line       : Migrate CT105 (Jellyfin) from pve-hp-1 (192.168.86.93) to pve-hp-2 (192.168.86.137).
+Path       : C:\Users\rober\workspace\Scripts\home-lab\jellyfin_migrate.py
+
+Filename   : jellyfin_migrate.py
+LineNumber : 275
+Line       :         print(f"Access at: http://192.168.86.90:8096")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\jellyfin_migrate.py
+
+Filename   : lock_proxmox_ips.py
+LineNumber : 44
+Line       :     gateway 192.168.86.1
+Path       : C:\Users\rober\workspace\Scripts\home-lab\lock_proxmox_ips.py
+
+Filename   : lock_proxmox_ips.py
+LineNumber : 78
+Line       :         new_net0 = net0.replace("ip=dhcp", f"ip={ip}/24,gw=192.168.86.1")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\lock_proxmox_ips.py
+
+Filename   : lock_proxmox_ips.py
+LineNumber : 83
+Line       :         new_net0 = net0 + f",ip={ip}/24,gw=192.168.86.1"
+Path       : C:\Users\rober\workspace\Scripts\home-lab\lock_proxmox_ips.py
+
+Filename   : prowlarr_dns_fix2.py
+LineNumber : 3
+Line       : The router (192.168.86.1) can't resolve torrent sites (NXDOMAIN).
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_dns_fix2.py
+
+Filename   : prowlarr_dns_fix2.py
+LineNumber : 4
+Line       : nslookup is trying ::1/127.0.0.1 — systemd-resolved stub listener is intercepting.
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_dns_fix2.py
+
+Filename   : prowlarr_dns_static2.py
+LineNumber : 6
+Line       : IP is confirmed as 192.168.86.96 (router DHCP reservation).
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_dns_static2.py
+
+Filename   : prowlarr_dns_static2.py
+LineNumber : 21
+Line       : GATEWAY = '192.168.86.1'
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_dns_static2.py
+
+Filename   : prowlarr_flare_fix.py
+LineNumber : 81
+Line       :         "-p 127.0.0.1:8191:8191 "
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_fix.py
+
+Filename   : prowlarr_flare_fix.py
+LineNumber : 95
+Line       : health = lxc("110", "curl -s --max-time 8 http://127.0.0.1:8191/health 2>/dev/null")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_fix.py
+
+Filename   : prowlarr_flare_fix.py
+LineNumber : 101
+Line       :     health = lxc("110", "curl -s --max-time 8 http://127.0.0.1:8191/health 2>/dev/null")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_fix.py
+
+Filename   : prowlarr_flare_fix.py
+LineNumber : 144
+Line       :     "curl -s --max-time 20 -X POST http://127.0.0.1:8191/v1 "
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_fix.py
+
+Filename   : prowlarr_flare_fix.py
+LineNumber : 159
+Line       :     "curl -s --max-time 35 -X POST http://127.0.0.1:8191/v1 "
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_fix.py
+
+Filename   : prowlarr_flare_local.py
+LineNumber : 124
+Line       : print("=== Step 4: Update Prowlarr proxy to http://192.168.86.96:8191 ===")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_local.py
+
+Filename   : prowlarr_flare_local2.py
+LineNumber : 146
+Line       : print("=== Step 5: Update Prowlarr proxy → http://192.168.86.96:8191 ===")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\prowlarr_flare_local2.py
+
+Filename   : tailscale_setup.py
+LineNumber : 138
+Line       :     "tailscale up --advertise-exit-node --advertise-routes=192.168.86.0/24 --accept-routes 2>&1 || true",
+Path       : C:\Users\rober\workspace\Scripts\home-lab\tailscale_setup.py
+
+Filename   : yts_net_deep.py
+LineNumber : 24
+Line       : print("=== From Proxmox host (192.168.86.93) ===")
+Path       : C:\Users\rober\workspace\Scripts\home-lab\yts_net_deep.py
+
+
+
